@@ -10,13 +10,8 @@ import {
 } from "antd";
 import { useTranslation } from "react-i18next";
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import moment from "moment-timezone";
 import store from "../src/store/store.js";
-import { of } from 'rxjs';
-import { ajax } from 'rxjs/ajax';
-import { catchError, map } from 'rxjs/operators';
-
 
 const { Title, Text } = Typography;
 
@@ -94,7 +89,7 @@ function CreateBlogPost() {
     const post = newArchivedPosts.splice(index, 1)[0];
     setArchivedPosts(newArchivedPosts);
     setPosts([...posts, post]);
-    store.dispatch({ type: 'PUBLISH_FROM_ARCHIVE', payload: post });
+    store.dispatch({ type: "PUBLISH_FROM_ARCHIVE", payload: post });
   };
 
   const handleEdit = (index) => {
@@ -117,25 +112,23 @@ function CreateBlogPost() {
     store.dispatch({ type: "EDIT_ARCHIVED_POST", payload: { index, post } });
   };
 
+  const fetchTime = (area) => {
+    fetch(`http://worldtimeapi.org/api/timezone/${area}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data || typeof data.datetime !== "string") {
+          console.error("Invalid response from API");
+          return;
+        }
+        const timeString = data.datetime.slice(11, 19); // Extract time from datetime string
+        setTime(timeString);
+      })
+      .catch((error) => console.error("There was an error!", error));
+  };
+
   const handleTimezoneChange = (value) => {
     setTimezone(value);
     fetchTime(value);
-  };
-
-  const fetchTime = (area) => {
-    axios
-      .get(`http://worldtimeapi.org/api/timezone/${area}`)
-      .then((response) => {
-        const date = moment(response.data.datetime).tz(area);
-        const hours = date.hours().toString().padStart(2, "0");
-        const minutes = date.minutes().toString().padStart(2, "0");
-        const seconds = date.seconds().toString().padStart(2, "0");
-        const timeString = `${hours}:${minutes}:${seconds}`;
-        setTime(timeString);
-      })
-      .catch((error) => {
-        console.error("There was an error!", error);
-      });
   };
 
   useEffect(() => {
