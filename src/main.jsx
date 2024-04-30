@@ -1,6 +1,22 @@
-import React, { useState } from "react";
-import { Card, Form, Input, Button, Typography, List, Popconfirm } from "antd";
-import { useTranslation } from 'react-i18next';
+import {
+  Card,
+  Form,
+  Input,
+  Button,
+  Typography,
+  List,
+  Popconfirm,
+  Select,
+} from "antd";
+import { useTranslation } from "react-i18next";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import moment from "moment-timezone";
+import store from "../src/store/store.js";
+import { of } from 'rxjs';
+import { ajax } from 'rxjs/ajax';
+import { catchError, map } from 'rxjs/operators';
+
 
 const { Title, Text } = Typography;
 
@@ -13,30 +29,43 @@ function CreateBlogPost() {
   const [posts, setPosts] = useState([]);
   const [archivedPosts, setArchivedPosts] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState("en");
+  const [time, setTime] = useState("");
+  const [timezone, setTimezone] = useState("Europe/London");
+  const { Option } = Select;
 
   const changeLanguage = () => {
-    const newLanguage = language === 'en' ? 'ru' : 'en';
+    const newLanguage = language === "en" ? "ru" : "en";
     i18n.changeLanguage(newLanguage);
     setLanguage(newLanguage);
   };
 
   const handleSubmit = () => {
+    const publishedAt = moment().tz(timezone).format("YYYY-MM-DD HH:mm:ss");
     if (editingIndex !== null) {
       const newPosts = [...posts];
-      newPosts[editingIndex] = { title, author, category, content };
+      newPosts[editingIndex] = {
+        title,
+        author,
+        category,
+        content,
+        timezone,
+        publishedAt,
+      };
       setPosts(newPosts);
       setEditingIndex(null);
     } else {
-      setPosts([
-        ...posts,
-        {
-          title,
-          author,
-          category,
-          content,
-        },
-      ]);
+      const newPost = {
+        title,
+        author,
+        category,
+        content,
+        timezone,
+        publishedAt,
+      };
+      setPosts([...posts, newPost]);
+
+      store.dispatch({ type: "ADD_POST", payload: newPost });
     }
 
     setTitle("");
@@ -47,8 +76,9 @@ function CreateBlogPost() {
 
   const handleDelete = (index) => {
     const newPosts = [...posts];
-    newPosts.splice(index, 1);
+    const post = newPosts.splice(index, 1)[0];
     setPosts(newPosts);
+    store.dispatch({ type: "DELETE_ARTICLE", payload: post });
   };
 
   const handleArchive = (index) => {
@@ -56,6 +86,7 @@ function CreateBlogPost() {
     const post = newPosts.splice(index, 1)[0];
     setPosts(newPosts);
     setArchivedPosts([...archivedPosts, post]);
+    store.dispatch({ type: "ADD_ARCHIVE", payload: post });
   };
 
   const publishFromArchive = (index) => {
@@ -63,6 +94,7 @@ function CreateBlogPost() {
     const post = newArchivedPosts.splice(index, 1)[0];
     setArchivedPosts(newArchivedPosts);
     setPosts([...posts, post]);
+    store.dispatch({ type: 'PUBLISH_FROM_ARCHIVE', payload: post });
   };
 
   const handleEdit = (index) => {
@@ -72,6 +104,7 @@ function CreateBlogPost() {
     setCategory(post.category);
     setContent(post.content);
     setEditingIndex(index);
+    store.dispatch({ type: "EDIT_POST", payload: { index, post } });
   };
 
   const handleEditArchived = (index) => {
@@ -81,21 +114,81 @@ function CreateBlogPost() {
     setCategory(post.category);
     setContent(post.content);
     setEditingIndex(index);
+    store.dispatch({ type: "EDIT_ARCHIVED_POST", payload: { index, post } });
   };
+
+  const handleTimezoneChange = (value) => {
+    setTimezone(value);
+    fetchTime(value);
+  };
+
+  const fetchTime = (area) => {
+    axios
+      .get(`http://worldtimeapi.org/api/timezone/${area}`)
+      .then((response) => {
+        const date = moment(response.data.datetime).tz(area);
+        const hours = date.hours().toString().padStart(2, "0");
+        const minutes = date.minutes().toString().padStart(2, "0");
+        const seconds = date.seconds().toString().padStart(2, "0");
+        const timeString = `${hours}:${minutes}:${seconds}`;
+        setTime(timeString);
+      })
+      .catch((error) => {
+        console.error("There was an error!", error);
+      });
+  };
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setTime((prevTime) => {
+        const momentTime = moment(prevTime, "HH:mm:ss").add(1, "seconds");
+        return momentTime.format("HH:mm:ss");
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId); // This clears the interval when the component unmounts
+  }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchTime(timezone);
+    }, 60000); // Fetch time from API every minute
+
+    return () => clearInterval(intervalId);
+  }, [timezone]);
+
+  useEffect(() => {
+    fetchTime(timezone);
+  }, [timezone]);
 
   return (
     <div style={{ padding: "20px" }}>
       <Button onClick={changeLanguage}>
-        {language === 'en' ? t('Change to Russian') : t('Change to English')}
+        {language === "en" ? t("Change to Russian") : t("Change to English")}
       </Button>
-      <Title level={1}>{t('Blog')}</Title>
+      <Title level={1}>{t("Blog")}</Title>
+      <Title level={3}>
+        {t("Time in")} {timezone}: {time}
+      </Title>
+      <Select
+        defaultValue={timezone}
+        style={{ width: 200 }}
+        onChange={handleTimezoneChange}
+      >
+        <Option value="Europe/London">London</Option>
+        <Option value="Europe/Moscow">Moscow</Option>
+        <Option value="America/New_York">New York</Option>
+        <Option value="Asia/Tokyo">Tokyo</Option>
+      </Select>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <div style={{ flex: 1, marginRight: "20px" }}>
-        <Title level={3}>{editingIndex !== null ? t('Edit Post') : t('Create New Blog Post')}</Title>
+          <Title level={3}>
+            {editingIndex !== null ? t("Edit Post") : t("Create New Blog Post")}
+          </Title>
           <Form onFinish={handleSubmit}>
             <Form.Item>
               <Input
-                placeholder={t('Title')}
+                placeholder={t("Title")}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
@@ -103,7 +196,7 @@ function CreateBlogPost() {
             </Form.Item>
             <Form.Item>
               <Input
-                placeholder={t('Author')}
+                placeholder={t("Author")}
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 required
@@ -111,7 +204,7 @@ function CreateBlogPost() {
             </Form.Item>
             <Form.Item>
               <Input
-                placeholder={t('Category')}
+                placeholder={t("Category")}
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 required
@@ -119,7 +212,7 @@ function CreateBlogPost() {
             </Form.Item>
             <Form.Item>
               <Input.TextArea
-                placeholder={t('Content')}
+                placeholder={t("Content")}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 required
@@ -127,13 +220,13 @@ function CreateBlogPost() {
             </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit">
-                {editingIndex !== null ? t('Update Post') : t('Create Post')}
+                {editingIndex !== null ? t("Update Post") : t("Create Post")}
               </Button>
             </Form.Item>
           </Form>
         </div>
         <div style={{ flex: 1, marginRight: "20px" }}>
-          <Title level={3}>{t('Posts')}</Title>
+          <Title level={3}>{t("Posts")}</Title>
           <List
             itemLayout="vertical"
             dataSource={posts}
@@ -147,21 +240,31 @@ function CreateBlogPost() {
                   <Text>{post.content}</Text>
                   <br />
                   <Text type="secondary">{post.author}</Text>
+                  <br />
+                  <Text type="secondary">{`${t("Timezone")}: ${
+                    post.timezone
+                  }`}</Text>
+                  <br />
+                  <Text type="secondary">{`${t("Published at")}: ${
+                    post.publishedAt
+                  }`}</Text>
                   <div style={{ marginTop: "10px" }}>
                     <Button
                       style={{ marginRight: "10px" }}
                       onClick={() => handleEdit(index)}
                     >
-                      {t('Edit')}
+                      {t("Edit")}
                     </Button>
                     <Popconfirm
-                      title={t('Delete ADV')}
+                      title={t("Delete ADV")}
                       onConfirm={() => handleDelete(index)}
                     >
-                      <Button style={{ marginRight: "10px" }}>{t('Delete')}</Button>
+                      <Button style={{ marginRight: "10px" }}>
+                        {t("Delete")}
+                      </Button>
                     </Popconfirm>
                     <Button onClick={() => handleArchive(index)}>
-                    {t('Move to Archive')}
+                      {t("Move to Archive")}
                     </Button>
                   </div>
                 </Card>
@@ -170,7 +273,7 @@ function CreateBlogPost() {
           />
         </div>
         <div style={{ flex: 1 }}>
-          <Title level={3}>{t('Archived Posts')}</Title>
+          <Title level={3}>{t("Archived Posts")}</Title>
           <List
             itemLayout="vertical"
             dataSource={archivedPosts}
@@ -184,21 +287,27 @@ function CreateBlogPost() {
                   <Text>{post.content}</Text>
                   <br />
                   <Text type="secondary">{post.author}</Text>
+                  <br />
+                  <Text type="secondary">{`Timezone: ${post.timezone}`}</Text>
+                  <br />
+                  <Text type="secondary">{`Published at: ${post.publishedAt}`}</Text>
                   <div style={{ marginTop: "10px" }}>
                     <Button
                       style={{ marginRight: "10px" }}
                       onClick={() => handleEditArchived(index)}
                     >
-                      Редактировать
+                      {t("Edit")}
                     </Button>
                     <Popconfirm
-                      title={t('Delete ADV')}
+                      title={t("Delete ADV")}
                       onConfirm={() => handleDelete(index)}
                     >
-                      <Button style={{ marginRight: "10px" }}>{t('Delete')}</Button>
+                      <Button style={{ marginRight: "10px" }}>
+                        {t("Delete")}
+                      </Button>
                     </Popconfirm>
                     <Button onClick={() => publishFromArchive(index)}>
-                    {t('Publish')}
+                      {t("Publish")}
                     </Button>
                   </div>
                 </Card>

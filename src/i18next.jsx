@@ -23,7 +23,10 @@ const resources = {
       "Change to English": "Change to English",
       "Change to Russian": "Change to Russian",
       "No data": "No data",
-      "Delete ADV": "Are u sure, that u want delete this post?"
+      "Delete ADV": "Are u sure, that u want delete this post?",
+      "Time in": "Time in",
+      "Timezone": "Timezone",
+      "Published at": "Published at",
     }
   },
   ru: {
@@ -47,7 +50,10 @@ const resources = {
       "Change to English": "Изменить на английский",
       "Change to Russian": "Изменить на русский",
       "No data": "Нет данных",
-      "Delete ADV": "Вы уверены, что хотите удалить этот пост?"
+      "Delete ADV": "Вы уверены, что хотите удалить этот пост?",
+      "Time in": "Время в",
+      "Timezone": "Часовой пояс",
+      "Published at": "Опубликовано в",
     }
   }
 };
