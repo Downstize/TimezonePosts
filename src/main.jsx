@@ -111,6 +111,7 @@ function CreateBlogPost() {
 
 
   const fetchTime = (area) => {
+    console.log(`Fetching time for ${area}`);
     Kefir.fromPromise(fetch(`http://worldtimeapi.org/api/timezone/${area}`)
       .then((response) => response.json()))
       .onValue((data) => {
@@ -144,9 +145,10 @@ function CreateBlogPost() {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
+      console.log(`Updating time for ${timezone}`);
       fetchTime(timezone);
     }, 60000);
-
+  
     return () => clearInterval(intervalId);
   }, [timezone]);
 
