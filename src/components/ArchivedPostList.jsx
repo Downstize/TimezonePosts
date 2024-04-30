@@ -20,9 +20,9 @@ export default function ArchivedPostList({ archivedPosts, handleEditArchived, ha
             <br />
             <Text type="secondary">{post.author}</Text>
             <br />
-            <Text type="secondary">{`Timezone: ${post.timezone}`}</Text>
+            <Text type="secondary">{`${t("Timezone")}: ${post.timezone}`}</Text>
             <br />
-            <Text type="secondary">{`Published at: ${post.publishedAt}`}</Text>
+            <Text type="secondary">{`${t("Published at")}: ${post.publishedAt}`}</Text>
             <div style={{ marginTop: "10px" }}>
               <Button
                 style={{ marginRight: "10px" }}
