@@ -1,11 +1,10 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 
-// Define actions
 const ADD_ARTICLE = "ADD_ARTICLE";
 const ADD_ARCHIVE = "ADD_ARCHIVE";
 const DELETE_ARTICLE = "DELETE_ARTICLE";
-const SET_TIMEZONE = "SET_TIMEZONE"; // New action for setting timezone
+const SET_TIMEZONE = "SET_TIMEZONE";
 const PUBLISH_FROM_ARCHIVE = "PUBLISH_FROM_ARCHIVE";
 const UPDATE_POST = "UPDATE_POST";
 const UPDATE_ARCHIVE_POST = "UPDATE_ARCHIVE_POST";
@@ -27,14 +26,13 @@ const updateArchivePost = (index, post) => ({
   payload: { index, post },
 });
 
-// Define reducers
 const articlesReducer = (state = [], action) => {
   switch (action.type) {
     case ADD_ARTICLE:
       return [...state, action.payload];
     case DELETE_ARTICLE:
       return state.filter((_, index) => index !== action.payload);
-    case PUBLISH_FROM_ARCHIVE: // Handle the new action
+    case PUBLISH_FROM_ARCHIVE:
       return [...state, action.payload];
     case UPDATE_POST:
       return state.map((post, index) =>
@@ -49,7 +47,7 @@ const archivesReducer = (state = [], action) => {
   switch (action.type) {
     case ADD_ARCHIVE:
       return [...state, action.payload];
-    case PUBLISH_FROM_ARCHIVE: // Handle the new action
+    case PUBLISH_FROM_ARCHIVE:
       return state.filter((_, index) => index !== action.payload);
     case UPDATE_ARCHIVE_POST:
       return state.map((post, index) =>
@@ -62,7 +60,6 @@ const archivesReducer = (state = [], action) => {
   }
 };
 
-// New reducer for handling timezone
 const timezoneReducer = (state = "Europe/London", action) => {
   switch (action.type) {
     case SET_TIMEZONE:
@@ -72,11 +69,10 @@ const timezoneReducer = (state = "Europe/London", action) => {
   }
 };
 
-// Combine reducers and create store
 const rootReducer = combineReducers({
   articles: articlesReducer,
   archives: archivesReducer,
-  timezone: timezoneReducer, // Add timezone reducer to the root reducer
+  timezone: timezoneReducer,
 });
 
 const store = configureStore({
