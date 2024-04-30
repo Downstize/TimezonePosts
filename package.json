@@ -9,8 +9,12 @@
     "@testing-library/user-event": "^13.5.0",
     "antd": "^5.16.4",
     "axios": "^1.6.8",
+    "baconjs": "^3.0.17",
+    "http-proxy-middleware": "^3.0.0",
     "i18next": "^23.11.2",
+    "kefir": "^3.8.8",
     "moment-timezone": "^0.5.45",
+    "most": "^1.9.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^14.1.1",
@@ -19,7 +23,8 @@
     "redux": "^5.0.1",
     "rxjs": "^7.8.1",
     "rxjs-compat": "^6.6.7",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xstream": "^11.14.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -44,5 +49,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
   }
 }
