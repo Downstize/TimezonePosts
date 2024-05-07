@@ -8,7 +8,7 @@ import PostList from "../src/components/PostList.jsx";
 import ArchivedPostList from "../src/components/ArchivedPostList.jsx";
 import { TimezoneSelect } from "../src/components/TimezoneSelect.jsx";
 import { LanguageButton } from "../src/components/LanguageButton.jsx";
-import Kefir from 'kefir';
+import Kefir from "kefir";
 
 const { Title } = Typography;
 
@@ -35,7 +35,8 @@ function CreateBlogPost() {
     const publishedAt = moment().tz(timezone).format("YYYY-MM-DD HH:mm:ss");
     if (editingIndex !== null) {
       const newPosts = [...posts];
-      newPosts[editingIndex] = {
+      const newArchivedPosts = [...archivedPosts];
+      const postToUpdate = {
         title,
         author,
         category,
@@ -43,7 +44,31 @@ function CreateBlogPost() {
         timezone,
         publishedAt,
       };
-      setPosts(newPosts);
+
+      const postIndexInPosts = newPosts.findIndex(
+        (post, index) => index === editingIndex
+      );
+      if (postIndexInPosts !== -1) {
+        newPosts[editingIndex] = postToUpdate;
+        setPosts(newPosts);
+        store.dispatch({
+          type: "EDIT_POST",
+          payload: { index: editingIndex, post: postToUpdate },
+        });
+      } else {
+        const postIndexInArchivedPosts = newArchivedPosts.findIndex(
+          (post, index) => index === editingIndex
+        );
+        if (postIndexInArchivedPosts !== -1) {
+          newArchivedPosts[editingIndex] = postToUpdate;
+          setArchivedPosts(newArchivedPosts);
+          store.dispatch({
+            type: "EDIT_ARCHIVED_POST",
+            payload: { index: editingIndex, post: postToUpdate },
+          });
+        }
+      }
+
       setEditingIndex(null);
     } else {
       const newPost = {
@@ -55,7 +80,6 @@ function CreateBlogPost() {
         publishedAt,
       };
       setPosts([...posts, newPost]);
-
       store.dispatch({ type: "ADD_POST", payload: newPost });
     }
 
@@ -70,6 +94,13 @@ function CreateBlogPost() {
     const post = newPosts.splice(index, 1)[0];
     setPosts(newPosts);
     store.dispatch({ type: "DELETE_ARTICLE", payload: post });
+  };
+
+  const handleDeleteArchived = (index) => {
+    const newArchivedPosts = [...archivedPosts];
+    const post = newArchivedPosts.splice(index, 1)[0];
+    setArchivedPosts(newArchivedPosts);
+    store.dispatch({ type: "DELETE_ARCHIVED_POST", payload: post });
   };
 
   const handleArchive = (index) => {
@@ -108,12 +139,13 @@ function CreateBlogPost() {
     store.dispatch({ type: "EDIT_ARCHIVED_POST", payload: { index, post } });
   };
 
-
-
   const fetchTime = (area) => {
     console.log(`Fetching time for ${area}`);
-    Kefir.fromPromise(fetch(`http://worldtimeapi.org/api/timezone/${area}`)
-      .then((response) => response.json()))
+    Kefir.fromPromise(
+      fetch(`http://worldtimeapi.org/api/timezone/${area}`).then((response) =>
+        response.json()
+      )
+    )
       .onValue((data) => {
         if (!data || typeof data.datetime !== "string") {
           console.error("Invalid response from API");
@@ -127,7 +159,7 @@ function CreateBlogPost() {
 
   const handleTimezoneChange = (value) => {
     setTimezone(value);
-    Kefir.fromEvents(document, 'change')
+    Kefir.fromEvents(document, "change")
       .debounce(1000)
       .onValue(() => fetchTime(value));
   };
@@ -148,7 +180,7 @@ function CreateBlogPost() {
       console.log(`Updating time for ${timezone}`);
       fetchTime(timezone);
     }, 60000);
-  
+
     return () => clearInterval(intervalId);
   }, [timezone]);
 
@@ -202,7 +234,7 @@ function CreateBlogPost() {
           <ArchivedPostList
             archivedPosts={archivedPosts}
             handleEditArchived={handleEditArchived}
-            handleDelete={handleDelete}
+            handleDelete={handleDeleteArchived}
             publishFromArchive={publishFromArchive}
           />
         </div>
